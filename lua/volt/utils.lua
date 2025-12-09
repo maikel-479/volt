@@ -39,11 +39,28 @@ end
 
 M.close = function(val)
   local event_bufs = require("volt.events").bufs
+  local all_win_ids = {}
 
+  -- 1. Collect all unique window IDs associated with the UI buffers.
   for _, buf in ipairs(val.bufs) do
-    local valid_buf = api.nvim_buf_is_valid(buf)
+    if api.nvim_buf_is_valid(buf) then
+      local win_ids = vim.fn.win_findbuf(buf)
+      for _, win_id in ipairs(win_ids) do
+        all_win_ids[win_id] = true
+      end
+    end
+  end
 
-    if valid_buf then
+  -- 2. Close all of those windows.
+  for win_id, _ in pairs(all_win_ids) do
+    if api.nvim_win_is_valid(win_id) then
+      api.nvim_win_close(win_id, true) -- force close
+    end
+  end
+
+  -- 3. Proceed with the original buffer deletion and cleanup logic.
+  for _, buf in ipairs(val.bufs) do
+    if api.nvim_buf_is_valid(buf) then
       api.nvim_buf_delete(buf, { force = true })
       state.remove(buf)
     end
@@ -52,6 +69,7 @@ M.close = function(val)
     for i, bufid in ipairs(event_bufs) do
       if bufid == buf then
         table.remove(event_bufs, i)
+        break
       end
     end
 
