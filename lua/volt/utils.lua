@@ -14,7 +14,7 @@ M.cycle_bufs = function(bufs)
 end
 
 M.cycle_clickables = function(buf, step)
-  local bufstate = state[buf]
+  local bufstate = state.get(buf)
   local lines = {}
 
   for row, val in pairs(bufstate.clickables) do
@@ -45,7 +45,7 @@ M.close = function(val)
 
     if valid_buf then
       api.nvim_buf_delete(buf, { force = true })
-      state[buf] = nil
+      state.remove(buf)
     end
 
     --- remove buf from event_bufs table

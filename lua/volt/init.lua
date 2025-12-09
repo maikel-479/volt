@@ -6,30 +6,25 @@ local state = require "volt.state"
 local utils = require "volt.utils"
 
 local get_section = function(tb, name)
-  for _, value in ipairs(tb) do
-    if value.name == name then
-      return value
-    end
-  end
+  return tb[name]
 end
 
 M.gen_data = function(data)
   for _, info in ipairs(data) do
-    state[info.buf] = {}
+    local v = state.create(info.buf)
 
     local buf = info.buf
-    local v = state[buf]
 
     v.clickables = {}
     v.hoverables = {}
     v.xpad = info.xpad
-    v.layout = info.layout
+    v.layout = {} -- Use a map for faster lookups
     v.ns = info.ns
     v.buf = buf
 
     local row = 0
-
-    for _, value in ipairs(v.layout) do
+    for _, value in ipairs(info.layout) do
+      v.layout[value.name] = value
       local lines = value.lines(buf)
       value.row = row
       row = row + #lines
@@ -40,22 +35,33 @@ M.gen_data = function(data)
 end
 
 M.redraw = function(buf, names)
-  local v = state[buf]
+  local v = state.get(buf)
+
+  if not v then
+    return
+  end
 
   if names == "all" then
-    for _, section in ipairs(v.layout) do
+    for _, section in pairs(v.layout) do
       draw(buf, section)
     end
     return
   end
 
+  local function redraw_one(name)
+    local section = get_section(v.layout, name)
+    if section then
+      draw(buf, section)
+    end
+  end
+
   if type(names) == "string" then
-    draw(buf, get_section(v.layout, names))
+    redraw_one(names)
     return
   end
 
   for _, name in ipairs(names) do
-    draw(buf, get_section(v.layout, name))
+    redraw_one(name)
   end
 end
 
@@ -71,6 +77,11 @@ end
 
 M.mappings = function(val)
   for _, buf in ipairs(val.bufs) do
+    local v = state.get(buf)
+    if v then
+      v.val = val
+    end
+
     -- cycle bufs
     map("n", "<C-t>", function()
       utils.cycle_bufs(val.bufs)
@@ -90,7 +101,7 @@ M.mappings = function(val)
         buffer = buf,
         callback = function()
           vim.schedule(function()
-            if state[buf] then
+            if state.get(buf) then
               utils.close(val)
             end
           end)
@@ -120,23 +131,20 @@ M.run = function(buf, opts)
   end
 end
 
-M.toggle_func = function(open_func, ui_state)
+M.toggle_func = function(open_func, ui_state, buf)
   if ui_state then
     open_func()
   else
-    api.nvim_feedkeys("q", "x", false)
+    M.close(buf)
   end
 end
 
 M.close = function(buf)
-  if not buf then
-    api.nvim_feedkeys("q", "x", false)
-    return
+  buf = buf or api.nvim_get_current_buf()
+  local v = state.get(buf)
+  if v and v.val then
+    utils.close(v.val)
   end
-
-  api.nvim_buf_call(buf, function()
-    api.nvim_feedkeys("q", "x", false)
-  end)
 end
 
 return M

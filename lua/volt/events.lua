@@ -24,7 +24,7 @@ local run_func = function(foo)
 end
 
 local function handle_click(buf, by, row, col, win)
-  local v = nvmark_state[buf]
+  local v = nvmark_state.get(buf)
 
   if not row then
     local cursor_pos = api.nvim_win_get_cursor(0)
