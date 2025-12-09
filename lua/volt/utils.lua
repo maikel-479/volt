@@ -2,19 +2,17 @@ local M = {}
 local api = vim.api
 local state = require "volt.state"
 
-local buf_i = 1
+M.cycle_bufs = function(val)
+  val.buf_i = val.buf_i == #val.bufs and 1 or val.buf_i + 1
 
-M.cycle_bufs = function(bufs)
-  buf_i = buf_i == #bufs and 1 or buf_i + 1
-
-  local new_buf = bufs[buf_i]
+  local new_buf = val.bufs[val.buf_i]
   local a = vim.fn.bufwinid(new_buf)
 
   api.nvim_set_current_win(a)
 end
 
 M.cycle_clickables = function(buf, step)
-  local bufstate = state[buf]
+  local bufstate = state.get(buf)
   local lines = {}
 
   for row, val in pairs(bufstate.clickables) do
@@ -38,22 +36,34 @@ M.cycle_clickables = function(buf, step)
 end
 
 M.close = function(val)
-  local event_bufs = require("volt.events").bufs
+  local events = require "volt.events"
+  local all_win_ids = {}
 
+  -- 1. Collect all unique window IDs associated with the UI buffers.
   for _, buf in ipairs(val.bufs) do
-    local valid_buf = api.nvim_buf_is_valid(buf)
-
-    if valid_buf then
-      api.nvim_buf_delete(buf, { force = true })
-      state[buf] = nil
-    end
-
-    --- remove buf from event_bufs table
-    for i, bufid in ipairs(event_bufs) do
-      if bufid == buf then
-        table.remove(event_bufs, i)
+    if api.nvim_buf_is_valid(buf) then
+      local win_ids = vim.fn.win_findbuf(buf)
+      for _, win_id in ipairs(win_ids) do
+        all_win_ids[win_id] = true
       end
     end
+  end
+
+  -- 2. Close all of those windows.
+  for win_id, _ in pairs(all_win_ids) do
+    if api.nvim_win_is_valid(win_id) then
+      api.nvim_win_close(win_id, true) -- force close
+    end
+  end
+
+  -- 3. Proceed with the original buffer deletion and cleanup logic.
+  for _, buf in ipairs(val.bufs) do
+    if api.nvim_buf_is_valid(buf) then
+      api.nvim_buf_delete(buf, { force = true })
+      state.remove(buf)
+    end
+
+    events.remove(buf)
 
     if val.close_func then
       val.close_func(buf)

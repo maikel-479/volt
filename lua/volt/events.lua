@@ -24,7 +24,7 @@ local run_func = function(foo)
 end
 
 local function handle_click(buf, by, row, col, win)
-  local v = nvmark_state[buf]
+  local v = nvmark_state.get(buf)
 
   if not row then
     local cursor_pos = api.nvim_win_get_cursor(0)
@@ -113,6 +113,15 @@ M.add = function(val)
   end
 end
 
+M.remove = function(buf)
+  for i, bufid in ipairs(M.bufs) do
+    if bufid == buf then
+      table.remove(M.bufs, i)
+      break
+    end
+  end
+end
+
 M.enable = function()
   vim.g.extmarks_events = true
   vim.o.mousemev = true
@@ -124,9 +133,14 @@ M.enable = function()
 
     if vim.tbl_contains(M.bufs, cur_buf) then
       local row, col = mousepos.line, mousepos.column - 1
+      local buf_state = nvmark_state.get(cur_buf)
+
+      if not buf_state then
+        return
+      end
 
       if key == MouseMove then
-        handle_hover(nvmark_state[cur_buf], cur_buf, row, col)
+        handle_hover(buf_state, cur_buf, row, col)
       elseif key == LeftMouse then
         handle_click(cur_buf, "mouse", row, col, cur_win)
       end
