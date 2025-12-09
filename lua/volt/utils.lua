@@ -2,12 +2,10 @@ local M = {}
 local api = vim.api
 local state = require "volt.state"
 
-local buf_i = 1
+M.cycle_bufs = function(val)
+  val.buf_i = val.buf_i == #val.bufs and 1 or val.buf_i + 1
 
-M.cycle_bufs = function(bufs)
-  buf_i = buf_i == #bufs and 1 or buf_i + 1
-
-  local new_buf = bufs[buf_i]
+  local new_buf = val.bufs[val.buf_i]
   local a = vim.fn.bufwinid(new_buf)
 
   api.nvim_set_current_win(a)
@@ -38,7 +36,7 @@ M.cycle_clickables = function(buf, step)
 end
 
 M.close = function(val)
-  local event_bufs = require("volt.events").bufs
+  local events = require "volt.events"
   local all_win_ids = {}
 
   -- 1. Collect all unique window IDs associated with the UI buffers.
@@ -65,13 +63,7 @@ M.close = function(val)
       state.remove(buf)
     end
 
-    --- remove buf from event_bufs table
-    for i, bufid in ipairs(event_bufs) do
-      if bufid == buf then
-        table.remove(event_bufs, i)
-        break
-      end
-    end
+    events.remove(buf)
 
     if val.close_func then
       val.close_func(buf)

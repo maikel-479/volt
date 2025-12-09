@@ -76,6 +76,7 @@ M.set_empty_lines = function(buf, n, w)
 end
 
 M.mappings = function(val)
+  val.buf_i = 1
   for _, buf in ipairs(val.bufs) do
     local v = state.get(buf)
     if v then
@@ -84,7 +85,7 @@ M.mappings = function(val)
 
     -- cycle bufs
     map("n", "<C-t>", function()
-      utils.cycle_bufs(val.bufs)
+      utils.cycle_bufs(val)
     end, { buffer = buf })
 
     -- close
