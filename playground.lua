@@ -14,100 +14,120 @@ local api = vim.api
 -- Component Imports
 local Button = require("volt.ui.components.button")
 local LinearLayout = require("volt.ui.components.layout")
+local Slider = require("volt.ui.components.slider")
+local Table = require("volt.ui.components.table")
+local Tabs = require("volt.ui.components.tabs")
 
 -- 1. Create a buffer for our playground
 local buf = api.nvim_create_buf(false, true)
 api.nvim_buf_set_option(buf, "bufhidden", "wipe")
 
+-- We need a way to re-render the components that display state.
+-- For the playground, we can just redraw the whole UI.
+local function redraw_playground()
+  vim.schedule(function()
+    volt.redraw(buf, "all")
+  end)
+end
+
 -- 2. Create instances of our new components
 local counter = 0
 local counter_text = "Click count: 0"
-
--- We need a way to re-render the component that displays the counter.
--- In a real app, this would be handled by a more sophisticated state management system.
--- For the playground, we can just redraw the whole UI.
-local function redraw_playground()
-  volt.redraw(buf, "all")
-end
 
 local button1 = Button.new({
   text = "Click Me!",
   on_click = function()
     counter = counter + 1
     counter_text = "Click count: " .. tostring(counter)
-    -- This is a temporary hack for the playground. A real reactive system
-    -- would handle this more elegantly.
-    print("Button clicked! Counter is now: " .. counter)
     redraw_playground()
   end,
 })
 
-local button2 = Button.new({
-  text = "Another Button",
-  on_click = function()
-    print("You clicked the second button!")
+local slider1 = Slider.new({
+  text = "Volume",
+  width = 30,
+  value = 75,
+  on_change = function(new_value)
+    print("Slider value changed to: " .. new_value)
+    redraw_playground() -- Redraw to reflect the new value
   end,
 })
 
-local button3 = Button.new({ text = "Button 3" })
-
--- 3. Create a layout to arrange the components
-local vertical_layout = LinearLayout.new({
-  orientation = "vertical",
-  children = { button1, button2 },
+local table1 = Table.new({
+  title = "My Awesome Data",
+  width = 60,
+  data = {
+    { "Name", "Age", "Occupation" },
+    { "Jules", "30", "Software Engineer" },
+    { "Bob", "42", "Plumber" },
+  },
 })
 
-local horizontal_layout = LinearLayout.new({
-  orientation = "horizontal",
-  children = { button1, button2, button3 },
+local tabs1 = Tabs.new({
+  tabs = { "Tab 1", "Tab 2", "Another Tab" },
+  active_tab = 2,
+  on_tab_change = function(i, name)
+    print("Tab changed to: " .. name .. " (index " .. i .. ")")
+    redraw_playground()
+  end,
 })
 
--- 4. Define the layout for the playground window
+-- 3. Define the layout for the playground window
 local playground_layout = {
   {
     name = "header",
     lines = function(buf)
       return {
         { { "--- Volt Component Playground ---", "Title" } },
-        { { "", "Normal" } }, -- Spacer
+        { { "", "Normal" } },
       }
     end,
   },
   {
-    name = "vertical_test",
+    name = "tabs_test",
     lines = function(buf)
+      local rendered_tabs = tabs1:render()
       return {
-        { { "Vertical LinearLayout:", "Comment" } },
-        unpack(vertical_layout:render()),
-        { { "", "Normal" } }, -- Spacer
+        { { "Tabs Component:", "Comment" } },
+        unpack(rendered_tabs),
+        { { "", "Normal" } },
       }
     end,
   },
   {
-    name = "horizontal_test",
+    name = "slider_test",
     lines = function(buf)
       return {
-        { { "Horizontal LinearLayout:", "Comment" } },
-        unpack(horizontal_layout:render()),
-        { { "", "Normal" } }, -- Spacer
+        { { "Slider Component:", "Comment" } },
+        unpack(slider1:render()),
+        { { "", "Normal" } },
       }
     end,
   },
   {
-    name = "state_test",
+    name = "table_test",
     lines = function(buf)
-      -- This part is a bit of a hack to show state changes.
-      -- It re-renders the text directly. In a real component,
-      -- the text would be part of the component's own render method.
+      local rendered_table = table1:render()
       return {
-        { { "State Change Test:", "Comment" } },
+        { { "Table Component:", "Comment" } },
+        unpack(rendered_table),
+        { { "", "Normal" } },
+      }
+    end,
+  },
+  {
+    name = "button_test",
+    lines = function(buf)
+      return {
+        { { "Button Component:", "Comment" } },
+        unpack(button1:render()),
         { { counter_text, "String" } },
       }
     end,
   },
 }
 
--- 5. Prepare the data for Volt
+-- 4. Prepare the data for Volt
 local ui_data = {
   {
     buf = buf,
@@ -119,7 +139,7 @@ local ui_data = {
 
 volt.gen_data(ui_data)
 
--- 6. Define the UI instance configuration
+-- 5. Define the UI instance configuration
 local ui_instance = {
   bufs = { buf },
   winclosed_event = true,
@@ -127,10 +147,10 @@ local ui_instance = {
 
 volt.mappings(ui_instance)
 
--- 7. Function to open the playground window
+-- 6. Function to open the playground window
 local function open_playground()
-  local win_height = 20
-  local win_width = 60
+  local win_height = 30
+  local win_width = 80
 
   local win = api.nvim_open_win(buf, true, {
     relative = "editor",

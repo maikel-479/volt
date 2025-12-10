@@ -180,6 +180,57 @@ local vertical_layout = LinearLayout.new({
 -- lines = function(buf) return vertical_layout:render() end
 ```
 
+#### `Slider`
+A horizontal slider component for selecting a value within a range.
+
+**Usage:**
+```lua
+local Slider = require("volt.ui.components.slider")
+
+local my_slider = Slider.new({
+  text = "Volume",
+  width = 30,
+  value = 75,
+  on_change = function(new_value)
+    print("Slider value changed to: " .. new_value)
+  end,
+})
+```
+
+#### `Table`
+A component for displaying data in a grid with borders and an optional title.
+
+**Usage:**
+```lua
+local Table = require("volt.ui.components.table")
+
+local my_table = Table.new({
+  title = "My Data",
+  width = 60,
+  data = {
+    { "Header 1", "Header 2" },
+    { "Row 1, Col 1", "Row 1, Col 2" },
+    { "Row 2, Col 1", "Row 2, Col 2" },
+  },
+})
+```
+
+#### `Tabs`
+A component for creating a tabbed navigation bar.
+
+**Usage:**
+```lua
+local Tabs = require("volt.ui.components.tabs")
+
+local my_tabs = Tabs.new({
+  tabs = { "Tab One", "Tab Two", "Tab Three" },
+  active_tab = 1,
+  on_tab_change = function(i, name)
+    print("Switched to tab: " .. name)
+  end,
+})
+```
+
 ### Developer Tools: The Component Playground
 
 To help developers build and test components in isolation, Volt includes a "storybook" style playground.
