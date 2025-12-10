@@ -56,28 +56,44 @@ local function set_cursormoved_autocmd(buf)
   })
 end
 
+-- We need to keep track of the currently hovered item to handle "unhover" events.
+local currently_hovered = nil
+
 local function handle_hover(buf_state, buf, row, col)
-  -- clear old hovers!
-  if buf_state.hovered_extmarks then
-    vim.g.nvmark_hovered = nil
-    redraw(buf, buf_state.hovered_extmarks)
-    buf_state.hovered_extmarks = nil
+  local virt_item = nil
+  if buf_state.hoverables[row] then
+    virt_item = get_item_from_col(buf_state.hoverables[row], col)
   end
 
-  if buf_state.hoverables[row] then
-    local virt = get_item_from_col(buf_state.hoverables[row], col)
-
-    if virt and virt.hover then
-      local hover = virt.hover
-
-      if hover.callback then
-        hover.callback()
+  -- If we are hovering over a new item
+  if virt_item and virt_item ~= currently_hovered then
+    -- 1. Unhover the previous item if there was one
+    if currently_hovered and currently_hovered.unhover and currently_hovered.unhover.callback then
+      currently_hovered.unhover.callback()
+      if currently_hovered.unhover.redraw then
+        redraw(buf, currently_hovered.unhover.redraw)
       end
-
-      vim.g.nvmark_hovered = hover.id or nil
-      redraw(buf, hover.redraw)
-      buf_state.hovered_extmarks = hover.redraw
     end
+
+    -- 2. Hover the new item
+    if virt_item.hover and virt_item.hover.callback then
+      virt_item.hover.callback()
+      if virt_item.hover.redraw then
+        redraw(buf, virt_item.hover.redraw)
+      end
+    end
+
+    currently_hovered = virt_item
+
+  -- If we are no longer hovering over anything
+  elseif not virt_item and currently_hovered then
+    if currently_hovered.unhover and currently_hovered.unhover.callback then
+      currently_hovered.unhover.callback()
+      if currently_hovered.unhover.redraw then
+        redraw(buf, currently_hovered.unhover.redraw)
+      end
+    end
+    currently_hovered = nil
   end
 end
 

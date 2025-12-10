@@ -129,3 +129,64 @@ open_menu()
 ```
 
 This example demonstrates how to define a layout with a clickable action, set up the necessary data, and launch the UI in a floating window. The recent refactoring ensures that when `volt.close(buf)` is called, the window and all associated resources will be cleaned up correctly.
+
+## 4. The Component Ecosystem
+
+As part of its evolution into a complete UI ecosystem, Volt now includes a library of reusable, stateful components. This is the recommended way to build UIs, as it promotes code reuse and simplifies the management of complex views.
+
+The component library lives in `lua/volt/ui/components/`.
+
+### Foundational Components
+
+#### `Button`
+A simple, clickable button component.
+
+**Usage:**
+```lua
+local Button = require("volt.ui.components.button")
+
+local my_button = Button.new({
+  text = "Click Me",
+  on_click = function()
+    print("Button was clicked!")
+  end,
+})
+
+-- To render it, you would include it in a layout:
+-- lines = function(buf) return my_button:render() end
+```
+
+The button handles its own hover state visually.
+
+#### `LinearLayout`
+A layout component that arranges other components (its `children`) in a stack.
+
+**Usage:**
+```lua
+local LinearLayout = require("volt.ui.components.layout")
+local Button = require("volt.ui.components.button")
+
+local button1 = Button.new({ text = "First" })
+local button2 = Button.new({ text = "Second" })
+
+-- Arrange the buttons vertically
+local vertical_layout = LinearLayout.new({
+  orientation = "vertical", -- or "horizontal"
+  children = { button1, button2 },
+})
+
+-- The layout's render method returns a complete `lines` table
+-- that can be used directly in a Volt section.
+-- lines = function(buf) return vertical_layout:render() end
+```
+
+### Developer Tools: The Component Playground
+
+To help developers build and test components in isolation, Volt includes a "storybook" style playground.
+
+**To run the playground:**
+```
+:luafile playground.lua
+```
+
+This will open a floating window showcasing all available components, allowing you to interact with them and see them in action. This is the best place to start when developing new components.

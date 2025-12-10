@@ -30,6 +30,7 @@ return function(buf, section)
         if type(virt.actions) == "table" then
           virt.ui_type = virt.actions.ui_type
           virt.hover = virt.actions.hover
+          virt.unhover = virt.actions.unhover
           table.insert(v.hoverables[row], virt)
         end
       end
