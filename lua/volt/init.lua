@@ -1,30 +1,37 @@
+-- Updated: expose icons API for Volt and provide helper M.get_file_icon
 local M = {}
 local api = vim.api
 local map = vim.keymap.set
 local draw = require "volt.draw"
 local state = require "volt.state"
 local utils = require "volt.utils"
+local icons = require "volt.icons"      -- new
 
 local get_section = function(tb, name)
-  return tb[name]
+  for _, value in ipairs(tb) do
+    if value.name == name then
+      return value
+    end
+  end
 end
 
 M.gen_data = function(data)
   for _, info in ipairs(data) do
-    local v = state.create(info.buf)
+    state[info.buf] = {}
 
     local buf = info.buf
+    local v = state[buf]
 
     v.clickables = {}
     v.hoverables = {}
     v.xpad = info.xpad
-    v.layout = {} -- Use a map for faster lookups
+    v.layout = info.layout
     v.ns = info.ns
     v.buf = buf
 
     local row = 0
-    for _, value in ipairs(info.layout) do
-      v.layout[value.name] = value
+
+    for _, value in ipairs(v.layout) do
       local lines = value.lines(buf)
       value.row = row
       row = row + #lines
@@ -35,33 +42,22 @@ M.gen_data = function(data)
 end
 
 M.redraw = function(buf, names)
-  local v = state.get(buf)
-
-  if not v then
-    return
-  end
+  local v = state[buf]
 
   if names == "all" then
-    for _, section in pairs(v.layout) do
+    for _, section in ipairs(v.layout) do
       draw(buf, section)
     end
     return
-  end
-
-  local function redraw_one(name)
-    local section = get_section(v.layout, name)
-    if section then
-      draw(buf, section)
-    end
   end
 
   if type(names) == "string" then
-    redraw_one(names)
+    draw(buf, get_section(v.layout, names))
     return
   end
 
   for _, name in ipairs(names) do
-    redraw_one(name)
+    draw(buf, get_section(v.layout, name))
   end
 end
 
@@ -76,16 +72,10 @@ M.set_empty_lines = function(buf, n, w)
 end
 
 M.mappings = function(val)
-  val.buf_i = 1
   for _, buf in ipairs(val.bufs) do
-    local v = state.get(buf)
-    if v then
-      v.val = val
-    end
-
     -- cycle bufs
     map("n", "<C-t>", function()
-      utils.cycle_bufs(val)
+      utils.cycle_bufs(val.bufs)
     end, { buffer = buf })
 
     -- close
@@ -102,7 +92,7 @@ M.mappings = function(val)
         buffer = buf,
         callback = function()
           vim.schedule(function()
-            if state.get(buf) then
+            if state[buf] then
               utils.close(val)
             end
           end)
@@ -132,20 +122,32 @@ M.run = function(buf, opts)
   end
 end
 
-M.toggle_func = function(open_func, ui_state, buf)
+M.toggle_func = function(open_func, ui_state)
   if ui_state then
     open_func()
   else
-    M.close(buf)
+    api.nvim_feedkeys("q", "x", false)
   end
 end
 
 M.close = function(buf)
-  buf = buf or api.nvim_get_current_buf()
-  local v = state.get(buf)
-  if v and v.val then
-    utils.close(v.val)
+  if not buf then
+    api.nvim_feedkeys("q", "x", false)
+    return
   end
+
+  api.nvim_buf_call(buf, function()
+    api.nvim_feedkeys("q", "x", false)
+  end)
+end
+
+-- Expose icon utilities (new)
+M.icons = icons
+
+M.get_file_icon = function(filepath)
+  local name = vim.fn.fnamemodify(filepath, ":t")
+  local ext = vim.fn.fnamemodify(filepath, ":e")
+  return M.icons.get_icon_with_hl(name, ext)
 end
 
 return M
