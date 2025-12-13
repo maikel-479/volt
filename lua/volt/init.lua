@@ -17,10 +17,8 @@ end
 
 M.gen_data = function(data)
   for _, info in ipairs(data) do
-    state[info.buf] = {}
-
     local buf = info.buf
-    local v = state[buf]
+    local v = state.create(buf)
 
     v.clickables = {}
     v.hoverables = {}
@@ -42,7 +40,7 @@ M.gen_data = function(data)
 end
 
 M.redraw = function(buf, names)
-  local v = state[buf]
+  local v = state.get(buf)
 
   if names == "all" then
     for _, section in ipairs(v.layout) do
@@ -92,7 +90,7 @@ M.mappings = function(val)
         buffer = buf,
         callback = function()
           vim.schedule(function()
-            if state[buf] then
+            if state.get(buf) then
               utils.close(val)
             end
           end)
