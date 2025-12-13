@@ -29,11 +29,16 @@ if vim.g.base46_cache then
     CommentFg = { fg = colors.light_grey },
   }
 else
-  local normal_bg = api.nvim_get_hl(0, { name = "Normal" }).bg
-  local comment_fg = api.nvim_get_hl(0, { name = "comment" }).fg
+  local normal_hl = api.nvim_get_hl(0, { name = "Normal" })
+  local normal_bg = normal_hl and normal_hl.bg
+  local comment_hl = api.nvim_get_hl(0, { name = "Comment" })
+  if not comment_hl or not comment_hl.fg then
+    comment_hl = api.nvim_get_hl(0, { name = "comment" })
+  end
+  local comment_fg = comment_hl and comment_hl.fg
 
-  normal_bg = hexadecimal_to_hex(normal_bg)
-  comment_fg = hexadecimal_to_hex(comment_fg)
+  normal_bg = hexadecimal_to_hex(normal_bg or 0)
+  comment_fg = hexadecimal_to_hex(comment_fg or 0xFFFFFF)
 
   local darker_bg = lighten(normal_bg, -3)
   local lighter_bg = lighten(normal_bg, 5)

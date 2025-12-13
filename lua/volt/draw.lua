@@ -13,6 +13,8 @@ return function(buf, section)
     local col = xpad
     v.clickables = v.clickables or {}
     v.hoverables = v.hoverables or {}
+    v.clickables[row] = v.clickables[row] or {}
+    v.hoverables[row] = v.hoverables[row] or {}
 
     for _, mark in ipairs(val) do
       local strlen = vim.fn.strwidth(mark[1])
