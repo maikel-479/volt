@@ -71,7 +71,7 @@ local icons_by_extension = {
   doc   = { icon = "󰈬", color = "#185ABD", name = "Doc" },
   docx  = { icon = "󰈬", color = "#185ABD", name = "Docx" },
   txt   = { icon = "", color = "#89E051", name = "Text" },
-},
+}
 
 local icons_by_filename = {
   -- Git
