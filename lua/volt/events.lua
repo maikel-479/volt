@@ -1,3 +1,4 @@
+local vim = vim
 local api = vim.api
 local nvmark_state = require "volt.state"
 local redraw = require("volt").redraw

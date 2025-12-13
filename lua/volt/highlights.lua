@@ -1,3 +1,4 @@
+local vim = vim
 local api = vim.api
 local lighten = require("volt.color").change_hex_lightness
 local bg = vim.o.bg

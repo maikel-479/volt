@@ -1,11 +1,12 @@
 -- Updated: expose icons API for Volt and provide helper M.get_file_icon
 local M = {}
+local vim = vim
 local api = vim.api
 local map = vim.keymap.set
 local draw = require "volt.draw"
 local state = require "volt.state"
 local utils = require "volt.utils"
-local icons = require "volt.icons"      -- new
+local icons = require "volt.icons" -- new
 
 local get_section = function(tb, name)
   for _, value in ipairs(tb) do

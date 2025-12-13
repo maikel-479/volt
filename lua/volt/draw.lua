@@ -1,3 +1,4 @@
+local vim = vim
 local api = vim.api
 local set_extmark = api.nvim_buf_set_extmark
 local state = require "volt.state"
