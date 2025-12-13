@@ -4,15 +4,15 @@ local state = require "volt.state"
 
 return function(buf, section)
   local v = state.get(buf) or state.init(buf)
+  if not v then return end
   local section_lines = section.lines(buf)
   local xpad = section.col_start or v.xpad or 0
 
   for line_i, val in ipairs(section_lines) do
     local row = line_i + section.row
     local col = xpad
-
-    v.clickables[row] = {}
-    v.hoverables[row] = {}
+    v.clickables = v.clickables or {}
+    v.hoverables = v.hoverables or {}
 
     for _, mark in ipairs(val) do
       local strlen = vim.fn.strwidth(mark[1])
