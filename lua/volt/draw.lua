@@ -3,7 +3,7 @@ local set_extmark = api.nvim_buf_set_extmark
 local state = require "volt.state"
 
 return function(buf, section)
-  local v = state.get(buf)
+  local v = state.get(buf) or state.init(buf)
   local section_lines = section.lines(buf)
   local xpad = section.col_start or v.xpad or 0
 
